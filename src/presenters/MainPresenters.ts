@@ -6,11 +6,11 @@ import { OrderModel } from '../models/OrderModel';
 import { ProductApi } from '../api/ProductApi';
 import { OrderApi } from '../api/OrderApi';
 import { MainView } from '../views/MainView';
-import { Modal } from '../components/Modal';
-import { ProductPreview } from '../components/ProductPreview';
-import { Basket } from '../components/Basket';
-import { OrderForm } from '../components/OrderForm';
-import { Success } from '../components/Success';
+import { Modal } from '../components/base/Modal';
+import { ProductPreview } from '../components/base/ProductPreview';
+import { Basket } from '../components/base/Basket';
+import { OrderForm } from '../components/base/OrderForm';
+import { Success } from '../components/base/Success';
 import { EVENTS, MODAL_TYPES, MESSAGES } from '../utils/constants';
 import { IProductModel } from '../types';
 

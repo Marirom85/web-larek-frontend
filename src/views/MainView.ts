@@ -1,7 +1,7 @@
 import { IMainView, IProductModel } from '../types';
 import { CSS_CLASSES } from '../utils/constants';
 import { ensureElement, setText } from '../utils/utils';
-import { ProductCard } from '../components/ProductCard';
+import { ProductCard } from '../components/base/ProductCard';
 import { EventEmitter } from '../components/base/events';
 
 export class MainView implements IMainView {

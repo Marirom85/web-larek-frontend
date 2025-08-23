@@ -1,5 +1,5 @@
-import { IOrderForm, IOrderModel, PaymentMethod } from '../types';
-import { CSS_CLASSES, PAYMENT_METHODS, EVENTS } from '../utils/constants';
+import { IOrderForm, IOrderModel, PaymentMethod } from '../../types';
+import { CSS_CLASSES, PAYMENT_METHODS, EVENTS } from '../../utils/constants';
 import {
 	cloneTemplate,
 	addListener,
@@ -9,8 +9,8 @@ import {
 	validatePhone,
 	validateAddress,
 	formatPhone,
-} from '../utils/utils';
-import { EventEmitter } from '../components/base/events';
+} from '../../utils/utils';
+import { EventEmitter } from './events';
 
 export class OrderForm implements IOrderForm {
 	protected element: HTMLElement;

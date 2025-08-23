@@ -1,13 +1,13 @@
-import { ISuccess } from '../types';
-import { CSS_CLASSES, TEMPLATES, EVENTS } from '../utils/constants';
+import { ISuccess } from '../../types';
+import { CSS_CLASSES, TEMPLATES, EVENTS } from '../../utils/constants';
 import {
 	cloneTemplate,
 	setText,
 	addListener,
 	removeListener,
 	formatPrice,
-} from '../utils/utils';
-import { EventEmitter } from '../components/base/events';
+} from '../../utils/utils';
+import { EventEmitter } from './events';
 
 export class Success implements ISuccess {
 	protected element: HTMLElement;

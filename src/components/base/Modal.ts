@@ -1,6 +1,6 @@
-import { IModal, IComponent } from '../types';
-import { CSS_CLASSES } from '../utils/constants';
-import { ensureElement, addListener, removeListener } from '../utils/utils';
+import { IModal, IComponent } from '../../types';
+import { CSS_CLASSES } from '../../utils/constants';
+import { ensureElement, addListener, removeListener } from '../../utils/utils';
 
 export class Modal implements IModal {
 	protected container: HTMLElement;

@@ -1,5 +1,5 @@
-import { IProductCard, IProductModel } from '../types';
-import { CSS_CLASSES, TEMPLATES, CDN_URL, EVENTS } from '../utils/constants';
+import { IProductCard, IProductModel } from '../../types';
+import { CSS_CLASSES, TEMPLATES, CDN_URL, EVENTS } from '../../utils/constants';
 import {
 	cloneTemplate,
 	setText,
@@ -8,8 +8,8 @@ import {
 	removeListener,
 	formatPrice,
 	formatCategory,
-} from '../utils/utils';
-import { EventEmitter } from '../components/base/events';
+} from '../../utils/utils';
+import { EventEmitter } from './events';
 
 export class ProductCard implements IProductCard {
 	protected element: HTMLElement;

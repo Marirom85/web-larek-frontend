@@ -13,7 +13,7 @@ import { ProductApi } from './api/ProductApi';
 import { OrderApi } from './api/OrderApi';
 
 // Презентеры
-import { MainPresenter } from './presenters/MainPresenter';
+import { MainPresenter } from './presenters/MainPresenters';
 
 // Инициализация базовых компонентов
 const events = new EventEmitter();
