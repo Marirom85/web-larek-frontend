@@ -14,12 +14,16 @@ export const PRODUCT_CATEGORIES = {
 	SOFT: 'soft',
 	HARD: 'hard',
 	OTHER: 'other',
+	ADDITIONAL: 'additional',
+	BUTTON: 'button',
 } as const;
 
 export const CATEGORY_LABELS = {
 	[PRODUCT_CATEGORIES.SOFT]: 'софт-скил',
 	[PRODUCT_CATEGORIES.HARD]: 'хард-скил',
 	[PRODUCT_CATEGORIES.OTHER]: 'другое',
+	[PRODUCT_CATEGORIES.ADDITIONAL]: 'дополнительно',
+	[PRODUCT_CATEGORIES.BUTTON]: 'кнопка',
 } as const;
 
 // ============================================================================
@@ -47,6 +51,7 @@ export const EVENTS = {
 	PRODUCT_REMOVE: 'product:remove',
 
 	// Корзина
+	BASKET_CHANGE: 'basket:change',
 	BASKET_UPDATE: 'basket:update',
 	BASKET_CLEAR: 'basket:clear',
 
@@ -54,6 +59,7 @@ export const EVENTS = {
 	ORDER_START: 'order:start',
 	ORDER_SUBMIT: 'order:submit',
 	ORDER_SUCCESS: 'order:success',
+	ORDER_UPDATE: 'order:update',
 
 	// Модальные окна
 	MODAL_OPEN: 'modal:open',
@@ -61,6 +67,10 @@ export const EVENTS = {
 
 	// Формы
 	FORM_VALIDATE: 'form:validate',
+	ORDER_PAYMENT_CHANGE: 'order:payment:change',
+	ORDER_ADDRESS_CHANGE: 'order:address:change',
+	ORDER_EMAIL_CHANGE: 'order:email:change',
+	ORDER_PHONE_CHANGE: 'order:phone:change',
 
 	// Ошибки
 	ERROR_SHOW: 'error:show',
@@ -120,6 +130,8 @@ export const CSS_CLASSES = {
 	CARD_CATEGORY_SOFT: 'card__category_soft',
 	CARD_CATEGORY_HARD: 'card__category_hard',
 	CARD_CATEGORY_OTHER: 'card__category_other',
+	CARD_CATEGORY_ADDITIONAL: 'card__category_additional',
+	CARD_CATEGORY_BUTTON: 'card__category_button',
 
 	// Корзина
 	BASKET: 'basket',
@@ -275,5 +287,21 @@ export const MOCK_PRODUCTS = [
 		image: '/src/images/Subtract.png',
 		category: PRODUCT_CATEGORIES.SOFT,
 		price: 1800,
+	},
+	{
+		id: '7',
+		title: 'Дополнительные материалы',
+		description: 'Полезные ресурсы для обучения.',
+		image: '/src/images/Subtract.png',
+		category: PRODUCT_CATEGORIES.ADDITIONAL,
+		price: 500,
+	},
+	{
+		id: '8',
+		title: 'Умная кнопка',
+		description: 'Интерактивный элемент для проектов.',
+		image: '/src/images/Subtract.png',
+		category: PRODUCT_CATEGORIES.BUTTON,
+		price: 300,
 	},
 ] as const;

@@ -1,21 +1,19 @@
-import { IProductModel } from '../../types';
-import { CSS_CLASSES, TEMPLATES, EVENTS } from '../../utils/constants';
+import { IBasketModel, IProductModel } from '../types';
+import { CSS_CLASSES, TEMPLATES, EVENTS } from '../utils/constants';
 import {
 	cloneTemplate,
 	setText,
 	addListener,
 	removeListener,
 	formatPrice,
-} from '../../utils/utils';
-import { EventEmitter } from './events';
+} from '../utils/utils';
+import { EventEmitter } from '../components/base/events';
 
-export class Basket {
+export class BasketView {
 	protected element: HTMLElement;
 	protected list: HTMLElement;
 	protected totalElement: HTMLElement;
 	protected button: HTMLButtonElement | null = null;
-	protected items: IProductModel[] = [];
-	protected total = 0;
 	protected events: EventEmitter;
 
 	constructor(events: EventEmitter) {
@@ -47,9 +45,7 @@ export class Basket {
 	 * Обработчик клика по кнопке оформления заказа
 	 */
 	protected handleOrderClick(event: Event): void {
-		if (this.items.length > 0) {
-			this.events.emit(EVENTS.ORDER_START);
-		}
+		this.events.emit(EVENTS.ORDER_START);
 	}
 
 	/**
@@ -76,27 +72,39 @@ export class Basket {
 		const index = item.getAttribute('data-index');
 		if (!index) return;
 		const productIndex = parseInt(index);
-		const product = this.items[productIndex];
-		if (product)
-			this.events.emit(EVENTS.PRODUCT_REMOVE, { productId: product.id });
 	}
 
 	/**
-	 * Обновить корзину
+	 * Обновить список товаров
 	 */
-	updateBasket(items: IProductModel[]): void {
-		this.items = items;
-		this.renderBasket();
+	updateItems(items: IProductModel[]): void {
+		this.renderBasket(items);
+	}
+
+	/**
+	 * Обновить общую стоимость
+	 */
+	updateTotal(total: number): void {
+		setText(this.totalElement, formatPrice(total));
+	}
+
+	/**
+	 * Обновить счетчик товаров
+	 */
+	updateCount(count: number): void {
+		if (this.button) {
+			this.button.disabled = count === 0;
+		}
 	}
 
 	/**
 	 * Рендер списка товаров
 	 */
-	protected renderBasket(): void {
+	protected renderBasket(items: IProductModel[]): void {
 		// Очищаем список
 		this.list.innerHTML = '';
 
-		if (this.items.length === 0) {
+		if (items.length === 0) {
 			// Показываем сообщение о пустой корзине
 			const emptyMessage = document.createElement('p');
 			emptyMessage.textContent = 'Корзина пуста';
@@ -105,18 +113,10 @@ export class Basket {
 			this.list.appendChild(emptyMessage);
 		} else {
 			// Добавляем товары
-			this.items.forEach((item, index) => {
+			items.forEach((item, index) => {
 				const itemElement = this.createBasketItem(item, index);
 				this.list.appendChild(itemElement);
 			});
-		}
-
-		// Обновляем общую стоимость
-		this.total = this.items.reduce((sum, item) => sum + (item.price || 0), 0);
-		setText(this.totalElement, formatPrice(this.total));
-		// Обновляем состояние кнопки
-		if (this.button) {
-			this.button.disabled = this.items.length === 0;
 		}
 	}
 

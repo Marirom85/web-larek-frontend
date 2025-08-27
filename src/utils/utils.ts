@@ -99,11 +99,41 @@ export const formatPhone: PhoneFormatter = (phone: string): string => {
  */
 export const formatCategory = (category: string): string => {
 	const categoryMap: Record<string, string> = {
+		// Английские ключи для мок-данных
 		soft: 'софт-скил',
 		hard: 'хард-скил',
 		other: 'другое',
+		additional: 'дополнительно',
+		button: 'кнопка',
+		// Русские названия из API
+		'софт-скил': 'софт-скил',
+		'хард-скил': 'хард-скил',
+		'другое': 'другое',
+		'дополнительное': 'дополнительно',
+		'кнопка': 'кнопка',
 	};
 	return categoryMap[category] || category;
+};
+
+/**
+ * Получение CSS класса категории
+ */
+export const getCategoryClass = (category: string): string => {
+	const categoryClassMap: Record<string, string> = {
+		// Английские ключи
+		soft: 'soft',
+		hard: 'hard',
+		other: 'other',
+		additional: 'additional',
+		button: 'button',
+		// Русские названия из API
+		'софт-скил': 'soft',
+		'хард-скил': 'hard',
+		'другое': 'other',
+		'дополнительное': 'additional',
+		'кнопка': 'button',
+	};
+	return categoryClassMap[category] || 'other';
 };
 
 // ============================================================================

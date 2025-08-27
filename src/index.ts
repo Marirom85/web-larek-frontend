@@ -14,11 +14,11 @@ import { OrderApi } from './api/OrderApi';
 
 // Представления
 import { MainView } from './views/MainView';
+import { BasketView } from './views/BasketView';
 
 // Компоненты
 import { Modal } from './components/base/Modal';
 import { ProductPreview } from './components/base/ProductPreview';
-import { Basket } from './components/base/Basket';
 import { OrderForm } from './components/base/OrderForm';
 import { Success } from './components/base/Success';
 
@@ -41,7 +41,12 @@ const modal = new Modal(
 	document.getElementById('modal-container') as HTMLElement
 );
 
+// Создание статических компонентов один раз
+const basketView = new BasketView(events);
+const successView = new Success(events);
+
 let currentModal: 'product' | 'basket' | 'order' | 'success' | null = null;
+let currentOrderForm: OrderForm | null = null;
 
 /**
  * Загрузить товары
@@ -77,10 +82,12 @@ function openProductModal(productId: string): void {
  * Открыть модальное окно корзины
  */
 function openBasketModal(): void {
-	const basket = new Basket(events);
-	basket.updateBasket(basketModel.getItems());
+	// Используем статический компонент basketView
+	basketView.updateItems(basketModel.getItems());
+	basketView.updateTotal(basketModel.getTotal());
+	basketView.updateCount(basketModel.getCount());
 
-	modal.setContent(basket.render());
+	modal.setContent(basketView.render());
 	modal.open();
 	currentModal = 'basket';
 }
@@ -96,9 +103,10 @@ function addToBasket(productId: string): void {
 		mainView.updateBasketCount(basketModel.getCount());
 
 		if (currentModal === 'basket') {
-			const basket = new Basket(events);
-			basket.updateBasket(basketModel.getItems());
-			modal.setContent(basket.render());
+			// Обновляем статический компонент basketView
+			basketView.updateItems(basketModel.getItems());
+			basketView.updateTotal(basketModel.getTotal());
+			basketView.updateCount(basketModel.getCount());
 		}
 	}
 }
@@ -112,9 +120,10 @@ function removeFromBasket(productId: string): void {
 	mainView.updateBasketCount(basketModel.getCount());
 
 	if (currentModal === 'basket') {
-		const basket = new Basket(events);
-		basket.updateBasket(basketModel.getItems());
-		modal.setContent(basket.render());
+		// Обновляем статический компонент basketView
+		basketView.updateItems(basketModel.getItems());
+		basketView.updateTotal(basketModel.getTotal());
+		basketView.updateCount(basketModel.getCount());
 	}
 }
 
@@ -122,8 +131,8 @@ function removeFromBasket(productId: string): void {
  * Начать оформление заказа
  */
 function startOrder(): void {
-	const orderForm = new OrderForm(events);
-	modal.setContent(orderForm.render());
+	currentOrderForm = new OrderForm(events);
+	modal.setContent(currentOrderForm.render());
 	modal.open();
 	currentModal = 'order';
 }
@@ -152,10 +161,10 @@ async function submitOrder(): Promise<void> {
 		mainView.updateBasketCount(0);
 		orderModel.reset();
 
-		const success = new Success(events);
-		success.setTotal(order.total);
+		// Используем статический компонент successView
+		successView.setOrderData(order.total, response.id);
 
-		modal.setContent(success.render());
+		modal.setContent(successView.render());
 		modal.open();
 		currentModal = 'success';
 	} catch (error) {
@@ -189,12 +198,8 @@ function setupEventHandlers(): void {
 	});
 
 	// События корзины
-	events.on(EVENTS.BASKET_UPDATE, (data: { basket: any }) => {
+	events.on(EVENTS.BASKET_CHANGE, (data: { basket: any }) => {
 		mainView.updateBasketCount(data.basket.count);
-	});
-
-	events.on(EVENTS.BASKET_CLEAR, (data: { basket: any }) => {
-		mainView.updateBasketCount(0);
 	});
 
 	// События заказа
@@ -202,26 +207,38 @@ function setupEventHandlers(): void {
 		startOrder();
 	});
 
-	events.on(EVENTS.ORDER_SUBMIT, (data: { data: any }) => {
-		if (data.data) {
-			orderModel.setPayment(data.data.payment);
-			orderModel.setAddress(data.data.address);
-			orderModel.setEmail(data.data.email);
-			orderModel.setPhone(data.data.phone);
-			submitOrder();
+	events.on(EVENTS.ORDER_UPDATE, (data: { step: number }) => {
+		console.log('ORDER_UPDATE event received:', data);
+		console.log('Current modal:', currentModal);
+		console.log('Current order form exists:', !!currentOrderForm);
+		
+		if (currentModal === 'order' && currentOrderForm) {
+			console.log('Setting step to:', data.step);
+			currentOrderForm.setStep(data.step as 1 | 2);
+		} else {
+			console.log('Cannot set step - currentModal:', currentModal, 'currentOrderForm:', currentOrderForm);
 		}
+	});
+
+	events.on(EVENTS.ORDER_SUBMIT, (data: any) => {
+		console.log('ORDER_SUBMIT event received:', data);
+		submitOrder();
 	});
 
 	// События модальных окон
 	events.on(EVENTS.MODAL_OPEN, (data: { type: string; data: any }) => {
-		if (data.type === MODAL_TYPES.PRODUCT) {
+		console.log('MODAL_OPEN event received:', data);
+		if (data.type === MODAL_TYPES.PRODUCT || data.type === 'product') {
 			openProductModal(data.data.productId);
+		} else if (data.type === MODAL_TYPES.BASKET || data.type === 'basket') {
+			openBasketModal();
 		}
 	});
 
 	events.on(EVENTS.MODAL_CLOSE, () => {
 		modal.close();
 		currentModal = null;
+		currentOrderForm = null;
 	});
 
 	// События ошибок
@@ -230,23 +247,9 @@ function setupEventHandlers(): void {
 	});
 }
 
-/**
- * Настроить обработчики DOM событий
- */
-function setupDOMEventListeners(): void {
-	// Обработчик клика по корзине в шапке
-	const basketButton = document.querySelector('.header__basket');
-	if (basketButton) {
-		basketButton.addEventListener('click', () => {
-			openBasketModal();
-		});
-	}
-}
-
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', () => {
 	setupEventHandlers();
-	setupDOMEventListeners();
 	loadProducts();
 });
 

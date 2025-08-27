@@ -17,7 +17,7 @@ export interface IProduct {
 /**
  * Категории товаров
  */
-export type ProductCategory = 'soft' | 'hard' | 'other';
+export type ProductCategory = 'soft' | 'hard' | 'other' | 'additional' | 'button';
 
 /**
  * Заказ для отправки на сервер

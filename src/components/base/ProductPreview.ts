@@ -8,6 +8,7 @@ import {
 	removeListener,
 	formatPrice,
 	formatCategory,
+	getCategoryClass,
 } from '../../utils/utils';
 import { EventEmitter } from './events';
 
@@ -44,7 +45,14 @@ export class ProductPreview {
 			if (this.product.inBasket) {
 				// Удаляем из корзины
 				this.events.emit(EVENTS.PRODUCT_REMOVE, { productId: this.product.id });
+				// Закрываем модалку после удаления
+				this.events.emit(EVENTS.MODAL_CLOSE);
 			} else {
+				// Проверяем, есть ли цена у товара
+				if (!this.product.price || this.product.price <= 0) {
+					// Не добавляем товары без цены в корзину
+					return;
+				}
 				// Добавляем в корзину
 				this.events.emit(EVENTS.PRODUCT_ADD, { product: this.product });
 				// Закрываем модалку после покупки
@@ -135,7 +143,8 @@ export class ProductPreview {
 			setText(category, formatCategory(this.product.category));
 
 			// Устанавливаем класс категории
-			category.className = `${CSS_CLASSES.CARD_CATEGORY} card__category_${this.product.category}`;
+			const categoryClass = getCategoryClass(this.product.category);
+			category.className = `${CSS_CLASSES.CARD_CATEGORY} card__category_${categoryClass}`;
 		}
 
 		// Обновляем кнопку
