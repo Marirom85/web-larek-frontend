@@ -145,6 +145,9 @@ async function submitOrder(): Promise<void> {
 		const orderData = orderModel.getData();
 		const basketItems = basketModel.getItems();
 
+		console.log('Отправка заказа:', orderData);
+		console.log('Товары в корзине:', basketItems);
+
 		const order = {
 			payment: orderData.payment!,
 			address: orderData.address,
@@ -154,7 +157,10 @@ async function submitOrder(): Promise<void> {
 			items: basketItems.map((item) => item.id),
 		};
 
+		console.log('Заказ для отправки:', order);
+
 		const response = await orderApi.createOrder(order);
+		console.log('Ответ от сервера:', response);
 
 		basketModel.clear();
 		productModel.clearBasket();
@@ -163,15 +169,19 @@ async function submitOrder(): Promise<void> {
 
 		// Используем статический компонент successView
 		successView.setOrderData(order.total, response.id);
+		console.log('Success view обновлен');
 
 		modal.setContent(successView.render());
+		console.log('Контент модального окна установлен');
+
 		modal.open();
 		currentModal = 'success';
+		console.log('Модальное окно успешного заказа открыто');
 	} catch (error) {
+		console.error('Ошибка отправки заказа:', error);
 		events.emit(EVENTS.ERROR_SHOW, {
 			message: MESSAGES.ORDER_SUBMIT_ERROR,
 		});
-		console.error('Ошибка отправки заказа:', error);
 	}
 }
 
@@ -220,9 +230,15 @@ function setupEventHandlers(): void {
 		}
 	});
 
-	events.on(EVENTS.ORDER_SUBMIT, (data: any) => {
+	events.on(EVENTS.ORDER_SUBMIT, (data: { data: any }) => {
 		console.log('ORDER_SUBMIT event received:', data);
-		submitOrder();
+		if (data && data.data) {
+			orderModel.setPayment(data.data.payment);
+			orderModel.setAddress(data.data.address);
+			orderModel.setEmail(data.data.email);
+			orderModel.setPhone(data.data.phone);
+			submitOrder();
+		}
 	});
 
 	// События модальных окон

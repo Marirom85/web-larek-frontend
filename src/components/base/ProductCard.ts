@@ -132,7 +132,7 @@ export class ProductCard implements IProductCard {
 			setText(title, this.product.title);
 		}
 
-		// Устанавливаем описание (используем CARD_TEXT вместо CARD_DESCRIPTION)
+		// Устанавливаем описание (используем CARD_TEXT)
 		const description = this.element.querySelector(
 			`.${CSS_CLASSES.CARD_TEXT}`
 		) as HTMLElement;

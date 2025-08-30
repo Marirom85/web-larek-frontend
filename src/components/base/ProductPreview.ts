@@ -1,4 +1,4 @@
-import { IProduct, IProductModel } from '../../types';
+import { IProductModel } from '../../types';
 import { CSS_CLASSES, TEMPLATES, CDN_URL, EVENTS } from '../../utils/constants';
 import {
 	cloneTemplate,

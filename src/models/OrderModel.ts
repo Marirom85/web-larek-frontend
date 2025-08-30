@@ -1,6 +1,6 @@
 import { IOrderModel, PaymentMethod, IOrderModelManager } from '../types';
 import { EventEmitter } from '../components/base/events';
-import { EVENTS, VALIDATION } from '../utils/constants';
+import { EVENTS } from '../utils/constants';
 import { validateEmail, validatePhone, validateAddress } from '../utils/utils';
 
 export class OrderModel implements IOrderModelManager {

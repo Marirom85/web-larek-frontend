@@ -1,4 +1,4 @@
-import { IMainPresenter } from '../types';
+import { IMainPresenter, IProductModel } from '../types';
 import { EventEmitter } from '../components/base/events';
 import { ProductModel } from '../models/ProductModel';
 import { BasketModel } from '../models/BasketModel';
@@ -11,8 +11,7 @@ import { ProductPreview } from '../components/base/ProductPreview';
 import { Basket } from '../components/base/Basket';
 import { OrderForm } from '../components/base/OrderForm';
 import { Success } from '../components/base/Success';
-import { EVENTS, MODAL_TYPES, MESSAGES } from '../utils/constants';
-import { IProductModel } from '../types';
+import { EVENTS, MESSAGES } from '../utils/constants';
 
 export class MainPresenter implements IMainPresenter {
 	private events: EventEmitter;
@@ -23,6 +22,7 @@ export class MainPresenter implements IMainPresenter {
 	private orderApi: OrderApi;
 	private view: MainView;
 	private modal: Modal;
+	private currentModal: string | null = null;
 
 	constructor(
 		events: EventEmitter,
@@ -65,7 +65,6 @@ export class MainPresenter implements IMainPresenter {
 		// События заказа
 		this.events.on(EVENTS.ORDER_START, this.handleOrderStart.bind(this));
 		this.events.on(EVENTS.ORDER_SUBMIT, this.handleOrderSubmit.bind(this));
-		this.events.on(EVENTS.ORDER_SUCCESS, this.handleOrderSuccess.bind(this));
 
 		// События модальных окон
 		this.events.on(EVENTS.MODAL_OPEN, this.handleModalOpen.bind(this));
@@ -117,8 +116,6 @@ export class MainPresenter implements IMainPresenter {
 	 */
 	openBasketModal(): void {
 		const basket = new Basket(this.events);
-
-		// Обновляем корзину перед открытием
 		basket.updateBasket(this.basketModel.getItems());
 
 		this.modal.setContent(basket.render());
@@ -134,16 +131,8 @@ export class MainPresenter implements IMainPresenter {
 		const product = this.productModel.getProduct(productId);
 		if (product) {
 			this.basketModel.addItem(product);
-
-			// Обновляем счетчик корзины
 			this.view.updateBasketCount(this.basketModel.getCount());
-
-			// Если открыто модальное окно корзины, обновляем его
-			if (this.currentModal === 'basket') {
-				const basket = new Basket(this.events);
-				basket.updateBasket(this.basketModel.getItems());
-				this.modal.setContent(basket.render());
-			}
+			this.updateBasketModalIfOpen();
 		}
 	}
 
@@ -153,16 +142,8 @@ export class MainPresenter implements IMainPresenter {
 	removeFromBasket(productId: string): void {
 		this.productModel.removeFromBasket(productId);
 		this.basketModel.removeItem(productId);
-
-		// Обновляем счетчик корзины
 		this.view.updateBasketCount(this.basketModel.getCount());
-
-		// Если открыто модальное окно корзины, обновляем его
-		if (this.currentModal === 'basket') {
-			const basket = new Basket(this.events);
-			basket.updateBasket(this.basketModel.getItems());
-			this.modal.setContent(basket.render());
-		}
+		this.updateBasketModalIfOpen();
 	}
 
 	/**
@@ -192,7 +173,7 @@ export class MainPresenter implements IMainPresenter {
 				items: basketItems.map((item) => item.id),
 			};
 
-			const response = await this.orderApi.createOrder(order);
+			await this.orderApi.createOrder(order);
 
 			// Очищаем корзину и сбрасываем счётчик
 			this.basketModel.clear();
@@ -256,10 +237,6 @@ export class MainPresenter implements IMainPresenter {
 		}
 	}
 
-	private handleOrderSuccess(): void {
-		// Обрабатывается в submitOrder
-	}
-
 	private handleModalOpen(data: { type: string; data: any }): void {
 		if (data.type === 'product') {
 			this.openProductModal(data.data.productId);
@@ -273,5 +250,16 @@ export class MainPresenter implements IMainPresenter {
 
 	private handleErrorShow(data: { message: string }): void {
 		this.view.showError(data.message);
+	}
+
+	/**
+	 * Обновить модальное окно корзины, если оно открыто
+	 */
+	private updateBasketModalIfOpen(): void {
+		if (this.currentModal === 'basket') {
+			const basket = new Basket(this.events);
+			basket.updateBasket(this.basketModel.getItems());
+			this.modal.setContent(basket.render());
+		}
 	}
 }
