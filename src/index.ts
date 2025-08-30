@@ -14,11 +14,10 @@ import { OrderApi } from './api/OrderApi';
 
 // Представления
 import { MainView } from './views/MainView';
-import { BasketView } from './views/BasketView';
 
 // Компоненты
 import { Modal } from './components/base/Modal';
-import { ProductPreview } from './components/base/ProductPreview';
+import { Basket } from './components/base/Basket';
 import { OrderForm } from './components/base/OrderForm';
 import { Success } from './components/base/Success';
 
@@ -42,7 +41,6 @@ const modal = new Modal(
 );
 
 // Создание статических компонентов один раз
-const basketView = new BasketView(events);
 const successView = new Success(events);
 
 // Инициализация презентера
