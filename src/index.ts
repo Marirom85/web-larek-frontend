@@ -45,6 +45,17 @@ const modal = new Modal(
 const basketView = new BasketView(events);
 const successView = new Success(events);
 
+// Инициализация презентера
+import { MainPresenter } from './presenters/MainPresenter';
+const mainPresenter = new MainPresenter(
+	events,
+	productModel,
+	basketModel,
+	orderModel,
+	productApi,
+	orderApi
+);
+
 let currentModal: 'product' | 'basket' | 'order' | 'success' | null = null;
 let currentOrderForm: OrderForm | null = null;
 
@@ -241,15 +252,15 @@ function setupEventHandlers(): void {
 		}
 	});
 
-	// События модальных окон
-	events.on(EVENTS.MODAL_OPEN, (data: { type: string; data: any }) => {
-		console.log('MODAL_OPEN event received:', data);
-		if (data.type === MODAL_TYPES.PRODUCT || data.type === 'product') {
-			openProductModal(data.data.productId);
-		} else if (data.type === MODAL_TYPES.BASKET || data.type === 'basket') {
-			openBasketModal();
-		}
-	});
+	// События модальных окон обрабатываются в MainPresenter
+	// events.on(EVENTS.MODAL_OPEN, (data: { type: string; data: any }) => {
+	// 	console.log('MODAL_OPEN event received:', data);
+	// 	if (data.type === MODAL_TYPES.PRODUCT || data.type === 'product') {
+	// 		openProductModal(data.data.productId);
+	// 	} else if (data.type === MODAL_TYPES.BASKET || data.type === 'basket') {
+	// 		openBasketModal();
+	// 	}
+	// });
 
 	events.on(EVENTS.MODAL_CLOSE, () => {
 		modal.close();
@@ -266,7 +277,7 @@ function setupEventHandlers(): void {
 // Запуск приложения
 document.addEventListener('DOMContentLoaded', () => {
 	setupEventHandlers();
-	loadProducts();
+	mainPresenter.init();
 });
 
 // Экспорт для использования в других модулях

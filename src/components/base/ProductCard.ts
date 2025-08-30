@@ -47,8 +47,8 @@ export class ProductCard implements IProductCard {
 	 * Обработчик клика по карточке
 	 */
 	protected handleCardClick(event: Event): void {
-		// Проверяем, что клик не по кнопке
-		if (event.target === this.button) {
+		// Проверяем, что клик не по кнопке или её дочерним элементам
+		if (this.button && (event.target === this.button || this.button.contains(event.target as Node))) {
 			return;
 		}
 
@@ -132,7 +132,7 @@ export class ProductCard implements IProductCard {
 			setText(title, this.product.title);
 		}
 
-		// Устанавливаем описание (используем CARD_TEXT)
+		// Устанавливаем описание (используем CARD_TEXT, если элемент существует)
 		const description = this.element.querySelector(
 			`.${CSS_CLASSES.CARD_TEXT}`
 		) as HTMLElement;
@@ -174,6 +174,13 @@ export class ProductCard implements IProductCard {
 		// Устанавливаем текст кнопки
 		if (this.button) {
 			setText(this.button, this.product.inBasket ? 'Убрать' : 'Купить');
+		} else {
+			// Попробуем найти кнопку снова
+			this.button = this.element.querySelector(`.${CSS_CLASSES.CARD_BUTTON}`);
+			if (this.button) {
+				addListener(this.button, 'click', this.handleButtonClick.bind(this));
+				setText(this.button, this.product.inBasket ? 'Убрать' : 'Купить');
+			}
 		}
 	}
 

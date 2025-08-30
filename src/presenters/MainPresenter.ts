@@ -11,7 +11,7 @@ import { ProductPreview } from '../components/base/ProductPreview';
 import { Basket } from '../components/base/Basket';
 import { OrderForm } from '../components/base/OrderForm';
 import { Success } from '../components/base/Success';
-import { EVENTS, MESSAGES } from '../utils/constants';
+import { EVENTS, MESSAGES, MODAL_TYPES } from '../utils/constants';
 
 export class MainPresenter implements IMainPresenter {
 	private events: EventEmitter;
@@ -238,8 +238,10 @@ export class MainPresenter implements IMainPresenter {
 	}
 
 	private handleModalOpen(data: { type: string; data: any }): void {
-		if (data.type === 'product') {
+		if (data.type === 'product' || data.type === MODAL_TYPES.PRODUCT) {
 			this.openProductModal(data.data.productId);
+		} else if (data.type === 'basket' || data.type === MODAL_TYPES.BASKET) {
+			this.openBasketModal();
 		}
 	}
 
