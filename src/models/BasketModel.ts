@@ -42,7 +42,7 @@ export class BasketModel implements IBasketModelManager {
 		if (!this.basket.items.find((item) => item.id === product.id)) {
 			this.basket.items.push(product);
 			this.updateTotals();
-			this.events.emit(EVENTS.BASKET_UPDATE, { basket: this.basket });
+			this.emitChangeEvent();
 		}
 	}
 
@@ -54,7 +54,7 @@ export class BasketModel implements IBasketModelManager {
 			(item) => item.id !== productId
 		);
 		this.updateTotals();
-		this.events.emit(EVENTS.BASKET_UPDATE, { basket: this.basket });
+		this.emitChangeEvent();
 	}
 
 	/**
@@ -63,7 +63,7 @@ export class BasketModel implements IBasketModelManager {
 	clear(): void {
 		this.basket.items = [];
 		this.updateTotals();
-		this.events.emit(EVENTS.BASKET_CLEAR, { basket: this.basket });
+		this.emitChangeEvent();
 	}
 
 	/**
@@ -97,6 +97,13 @@ export class BasketModel implements IBasketModelManager {
 	syncWithProducts(products: IProductModel[]): void {
 		this.basket.items = products.filter((product) => product.inBasket);
 		this.updateTotals();
-		this.events.emit(EVENTS.BASKET_UPDATE, { basket: this.basket });
+		this.emitChangeEvent();
+	}
+
+	/**
+	 * Эмитировать событие изменения корзины
+	 */
+	private emitChangeEvent(): void {
+		this.events.emit(EVENTS.BASKET_CHANGE, { basket: this.basket });
 	}
 }

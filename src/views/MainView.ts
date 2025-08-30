@@ -1,6 +1,6 @@
 import { IMainView, IProductModel } from '../types';
-import { CSS_CLASSES } from '../utils/constants';
-import { ensureElement, setText } from '../utils/utils';
+import { CSS_CLASSES, EVENTS, MODAL_TYPES } from '../utils/constants';
+import { ensureElement, setText, addListener, removeListener } from '../utils/utils';
 import { ProductCard } from '../components/base/ProductCard';
 import { EventEmitter } from '../components/base/events';
 
@@ -8,6 +8,7 @@ export class MainView implements IMainView {
 	protected container: HTMLElement;
 	protected gallery: HTMLElement;
 	protected basketCounter: HTMLElement;
+	protected basketButton: HTMLElement | null = null;
 	protected cards: ProductCard[] = [];
 	protected events: EventEmitter;
 
@@ -22,6 +23,28 @@ export class MainView implements IMainView {
 			this.container,
 			`.${CSS_CLASSES.HEADER_BASKET_COUNTER}`
 		);
+		this.basketButton = this.container.querySelector(`.${CSS_CLASSES.HEADER_BASKET}`);
+		this.bindEvents();
+	}
+
+	/**
+	 * Привязать события
+	 */
+	protected bindEvents(): void {
+		// Обработчик клика по корзине в шапке
+		if (this.basketButton) {
+			addListener(this.basketButton, 'click', this.handleBasketClick.bind(this));
+		}
+	}
+
+	/**
+	 * Обработчик клика по корзине
+	 */
+	protected handleBasketClick(): void {
+		this.events.emit(EVENTS.MODAL_OPEN, {
+			type: MODAL_TYPES.BASKET,
+			data: {}
+		});
 	}
 
 	/**

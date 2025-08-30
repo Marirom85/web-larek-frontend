@@ -1,5 +1,5 @@
 import { IProductCard, IProductModel } from '../../types';
-import { CSS_CLASSES, TEMPLATES, CDN_URL, EVENTS } from '../../utils/constants';
+import { CSS_CLASSES, TEMPLATES, CDN_URL, EVENTS, MODAL_TYPES } from '../../utils/constants';
 import {
 	cloneTemplate,
 	setText,
@@ -8,6 +8,7 @@ import {
 	removeListener,
 	formatPrice,
 	formatCategory,
+	getCategoryClass,
 } from '../../utils/utils';
 import { EventEmitter } from './events';
 
@@ -46,15 +47,15 @@ export class ProductCard implements IProductCard {
 	 * Обработчик клика по карточке
 	 */
 	protected handleCardClick(event: Event): void {
-		// Проверяем, что клик не по кнопке
-		if (event.target === this.button) {
+		// Проверяем, что клик не по кнопке или её дочерним элементам
+		if (this.button && (event.target === this.button || this.button.contains(event.target as Node))) {
 			return;
 		}
 
 		if (this.product) {
 			// Используем EventEmitter для открытия модального окна
 			this.events.emit(EVENTS.MODAL_OPEN, {
-				type: 'product',
+				type: MODAL_TYPES.PRODUCT,
 				data: { productId: this.product.id },
 			});
 		}
@@ -71,6 +72,11 @@ export class ProductCard implements IProductCard {
 				// Удаляем из корзины
 				this.events.emit(EVENTS.PRODUCT_REMOVE, { productId: this.product.id });
 			} else {
+				// Проверяем, есть ли цена у товара
+				if (!this.product.price || this.product.price <= 0) {
+					// Не добавляем товары без цены в корзину
+					return;
+				}
 				// Добавляем в корзину
 				this.events.emit(EVENTS.PRODUCT_ADD, { product: this.product });
 			}
@@ -126,7 +132,7 @@ export class ProductCard implements IProductCard {
 			setText(title, this.product.title);
 		}
 
-		// Устанавливаем описание (используем CARD_TEXT вместо CARD_DESCRIPTION)
+		// Устанавливаем описание (используем CARD_TEXT, если элемент существует)
 		const description = this.element.querySelector(
 			`.${CSS_CLASSES.CARD_TEXT}`
 		) as HTMLElement;
@@ -140,6 +146,10 @@ export class ProductCard implements IProductCard {
 		) as HTMLElement;
 		if (category) {
 			setText(category, formatCategory(this.product.category));
+			
+			// Устанавливаем класс категории
+			const categoryClass = getCategoryClass(this.product.category);
+			category.className = `${CSS_CLASSES.CARD_CATEGORY} card__category_${categoryClass}`;
 		}
 
 		// Устанавливаем изображение
@@ -164,6 +174,13 @@ export class ProductCard implements IProductCard {
 		// Устанавливаем текст кнопки
 		if (this.button) {
 			setText(this.button, this.product.inBasket ? 'Убрать' : 'Купить');
+		} else {
+			// Попробуем найти кнопку снова
+			this.button = this.element.querySelector(`.${CSS_CLASSES.CARD_BUTTON}`);
+			if (this.button) {
+				addListener(this.button, 'click', this.handleButtonClick.bind(this));
+				setText(this.button, this.product.inBasket ? 'Убрать' : 'Купить');
+			}
 		}
 	}
 

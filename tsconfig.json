@@ -3,10 +3,12 @@
     "allowSyntheticDefaultImports": true,
     "noImplicitAny": true,
     "module": "es6",
-    "target": "es2017",
+    "target": "ES2022",
     "allowJs": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
+    "lib": ["ES2022", "DOM"],
+    "ignoreDeprecations": "5.0"
   },
   "include": ["src/**/*.ts", "src/types/*.d.ts"]
 }

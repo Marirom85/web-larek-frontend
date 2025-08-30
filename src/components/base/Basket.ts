@@ -1,4 +1,4 @@
-import { IBasket, IProductModel } from '../../types';
+import { IProductModel } from '../../types';
 import { CSS_CLASSES, TEMPLATES, EVENTS } from '../../utils/constants';
 import {
 	cloneTemplate,
@@ -9,7 +9,7 @@ import {
 } from '../../utils/utils';
 import { EventEmitter } from './events';
 
-export class Basket implements IBasket {
+export class Basket {
 	protected element: HTMLElement;
 	protected list: HTMLElement;
 	protected totalElement: HTMLElement;
@@ -82,45 +82,10 @@ export class Basket implements IBasket {
 	}
 
 	/**
-	 * Добавить товар в корзину
-	 */
-	addItem(product: IProductModel): void {
-		this.items.push(product);
-		this.updateTotal();
-		this.renderBasket();
-	}
-
-	/**
-	 * Удалить товар из корзины
-	 */
-	removeItem(productId: string): void {
-		this.items = this.items.filter((item) => item.id !== productId);
-		this.updateTotal();
-		this.renderBasket();
-	}
-
-	/**
-	 * Обновить общую стоимость
-	 */
-	updateTotal(): void {
-		this.total = this.items.reduce((sum, item) => sum + (item.price || 0), 0);
-		setText(this.totalElement, formatPrice(this.total));
-	}
-
-	/**
 	 * Обновить корзину
 	 */
 	updateBasket(items: IProductModel[]): void {
 		this.items = items;
-		this.renderBasket();
-	}
-
-	/**
-	 * Очистить корзину
-	 */
-	clear(): void {
-		this.items = [];
-		this.total = 0;
 		this.renderBasket();
 	}
 
@@ -147,7 +112,8 @@ export class Basket implements IBasket {
 		}
 
 		// Обновляем общую стоимость
-		this.updateTotal();
+		this.total = this.items.reduce((sum, item) => sum + (item.price || 0), 0);
+		setText(this.totalElement, formatPrice(this.total));
 		// Обновляем состояние кнопки
 		if (this.button) {
 			this.button.disabled = this.items.length === 0;

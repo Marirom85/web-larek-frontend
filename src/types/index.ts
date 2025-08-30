@@ -17,7 +17,7 @@ export interface IProduct {
 /**
  * Категории товаров
  */
-export type ProductCategory = 'soft' | 'hard' | 'other';
+export type ProductCategory = 'soft' | 'hard' | 'other' | 'additional' | 'button';
 
 /**
  * Заказ для отправки на сервер
@@ -333,10 +333,6 @@ export interface ISuccess extends IModalContent {
 	setTotal(total: number): void;
 }
 
-// ============================================================================
-// ИНТЕРФЕЙСЫ ПРЕЗЕНТЕРОВ
-// ============================================================================
-
 /**
  * Интерфейс главного презентера
  */
@@ -349,40 +345,6 @@ export interface IMainPresenter {
 	removeFromBasket(productId: string): void;
 	startOrder(): void;
 	submitOrder(): void;
-}
-
-/**
- * Интерфейс презентера товара
- */
-export interface IProductPresenter {
-	setProduct(productId: string): void;
-	addToBasket(): void;
-	removeFromBasket(): void;
-	openModal(): void;
-}
-
-/**
- * Интерфейс презентера корзины
- */
-export interface IBasketPresenter {
-	loadItems(): void;
-	removeItem(productId: string): void;
-	startOrder(): void;
-	close(): void;
-}
-
-/**
- * Интерфейс презентера заказа
- */
-export interface IOrderPresenter {
-	setStep(step: 1 | 2): void;
-	setPayment(payment: PaymentMethod): void;
-	setAddress(address: string): void;
-	setEmail(email: string): void;
-	setPhone(phone: string): void;
-	validateStep(): boolean;
-	submitOrder(): void;
-	close(): void;
 }
 
 // ============================================================================
