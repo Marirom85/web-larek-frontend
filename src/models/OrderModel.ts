@@ -1,6 +1,5 @@
 import { IOrderModel, PaymentMethod, IOrderModelManager } from '../types';
 import { EventEmitter } from '../components/base/events';
-import { EVENTS } from '../utils/constants';
 import { validateEmail, validatePhone, validateAddress } from '../utils/utils';
 
 export class OrderModel implements IOrderModelManager {
@@ -22,6 +21,27 @@ export class OrderModel implements IOrderModelManager {
      */
     getData(): IOrderModel {
         return { ...this.order };
+    }
+
+    /**
+     * Установить данные заказа
+     */
+    setData(key: string, value: string): void {
+        switch (key) {
+            case 'payment':
+                this.order.payment = value as PaymentMethod;
+                break;
+            case 'address':
+                this.order.address = value;
+                break;
+            case 'email':
+                this.order.email = value;
+                break;
+            case 'phone':
+                this.order.phone = value;
+                break;
+        }
+        this.validate();
     }
 
     /**
@@ -68,10 +88,9 @@ export class OrderModel implements IOrderModelManager {
         this.order.isValid =
             isPaymentValid && isAddressValid && isEmailValid && isPhoneValid;
 
-        this.events.emit(EVENTS.FORM_VALIDATE, {
-            form: 'order',
-            isValid: this.order.isValid,
-        });
+        // Эмитируем события об ошибках валидации
+        const errors = this.getValidationErrors();
+        this.events.emit('formErrors:change', errors);
 
         return this.order.isValid;
     }

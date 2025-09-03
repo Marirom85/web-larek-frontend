@@ -38,9 +38,6 @@ export class Basket {
 		if (this.button) {
 			addListener(this.button, 'click', this.handleOrderClick.bind(this));
 		}
-
-		// Обработка удаления товаров из корзины
-		addListener(this.element, 'click', this.handleItemClick.bind(this));
 	}
 
 	/**
@@ -52,34 +49,6 @@ export class Basket {
 		}
 	}
 
-	/**
-	 * Обработчик клика по элементам корзины
-	 */
-	protected handleItemClick(event: Event): void {
-		const target = event.target as HTMLElement;
-		const deleteButton = target.closest(
-			`.${CSS_CLASSES.BASKET_ITEM_DELETE}`
-		) as HTMLElement | null;
-
-		if (!deleteButton) return;
-
-		// Пытаемся взять productId напрямую с кнопки
-		const productId = deleteButton.getAttribute('data-id');
-		if (productId) {
-			this.events.emit(EVENTS.PRODUCT_REMOVE, { productId });
-			return;
-		}
-
-		// Фолбэк: определяем по data-index контейнера
-		const item = deleteButton.closest(`.${CSS_CLASSES.BASKET_ITEM}`);
-		if (!item) return;
-		const index = item.getAttribute('data-index');
-		if (!index) return;
-		const productIndex = parseInt(index);
-		const product = this.items[productIndex];
-		if (product)
-			this.events.emit(EVENTS.PRODUCT_REMOVE, { productId: product.id });
-	}
 
 	/**
 	 * Обновить корзину
@@ -87,6 +56,14 @@ export class Basket {
 	updateBasket(items: IProductModel[]): void {
 		this.items = items;
 		this.renderBasket();
+	}
+
+	/**
+	 * Обновить общую стоимость
+	 */
+	updateTotal(total: number): void {
+		this.total = total;
+		setText(this.totalElement, formatPrice(this.total));
 	}
 
 	/**
@@ -111,9 +88,6 @@ export class Basket {
 			});
 		}
 
-		// Обновляем общую стоимость
-		this.total = this.items.reduce((sum, item) => sum + (item.price || 0), 0);
-		setText(this.totalElement, formatPrice(this.total));
 		// Обновляем состояние кнопки
 		if (this.button) {
 			this.button.disabled = this.items.length === 0;
@@ -168,6 +142,10 @@ export class Basket {
 			if (deleteButton instanceof HTMLButtonElement) {
 				deleteButton.type = 'button';
 			}
+			// Добавляем обработчик клика напрямую на кнопку
+			addListener(deleteButton, 'click', () => {
+				this.events.emit(EVENTS.PRODUCT_REMOVE, { productId: product.id });
+			});
 		}
 		return item;
 	}
@@ -186,6 +164,6 @@ export class Basket {
 		if (this.button) {
 			removeListener(this.button, 'click', this.handleOrderClick.bind(this));
 		}
-		removeListener(this.element, 'click', this.handleItemClick.bind(this));
+		// Event listeners на кнопки удаления будут автоматически удалены при очистке innerHTML
 	}
 }

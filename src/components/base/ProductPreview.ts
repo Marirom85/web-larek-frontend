@@ -31,33 +31,15 @@ export class ProductPreview {
 		// Клик по кнопке для добавления/удаления из корзины
 		this.button = this.element.querySelector(`.${CSS_CLASSES.CARD_BUTTON}`);
 		if (this.button) {
-			addListener(this.button, 'click', this.handleButtonClick.bind(this));
-		}
-	}
-
-	/**
-	 * Обработчик клика по кнопке
-	 */
-	protected handleButtonClick(event: Event): void {
-		event.stopPropagation();
-
-		if (this.product) {
-			if (this.product.inBasket) {
-				// Удаляем из корзины
-				this.events.emit(EVENTS.PRODUCT_REMOVE, { productId: this.product.id });
-				// Закрываем модалку после удаления
-				this.events.emit(EVENTS.MODAL_CLOSE);
-			} else {
-				// Проверяем, есть ли цена у товара
-				if (!this.product.price || this.product.price <= 0) {
-					// Не добавляем товары без цены в корзину
-					return;
+			addListener(this.button, 'click', (event: Event) => {
+				event.stopPropagation();
+				if (this.product) {
+					this.events.emit('productPreview:buttonClick', { 
+						productId: this.product.id,
+						inBasket: this.product.inBasket
+					});
 				}
-				// Добавляем в корзину
-				this.events.emit(EVENTS.PRODUCT_ADD, { product: this.product });
-				// Закрываем модалку после покупки
-				this.events.emit(EVENTS.MODAL_CLOSE);
-			}
+			});
 		}
 	}
 
@@ -162,8 +144,6 @@ export class ProductPreview {
 	 * Уничтожить компонент
 	 */
 	destroy(): void {
-		if (this.button) {
-			removeListener(this.button, 'click', this.handleButtonClick.bind(this));
-		}
+		// Обработчики очищаются автоматически при удалении DOM-элементов
 	}
 }
