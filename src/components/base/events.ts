@@ -25,6 +25,7 @@ export class EventEmitter implements IEvents {
 	_events: Map<EventName, Set<Subscriber>>;
 
 	constructor() {
+		console.log('EventEmitter constructor called');
 		this._events = new Map<EventName, Set<Subscriber>>();
 	}
 
@@ -32,10 +33,12 @@ export class EventEmitter implements IEvents {
 	 * Установить обработчик на событие
 	 */
 	on<T extends object>(eventName: EventName, callback: (event: T) => void) {
+		console.log('EventEmitter.on:', eventName, 'callback:', callback.toString().slice(0, 100) + '...');
 		if (!this._events.has(eventName)) {
 			this._events.set(eventName, new Set<Subscriber>());
 		}
 		this._events.get(eventName)?.add(callback);
+		console.log('EventEmitter.on - subscribers count:', this._events.get(eventName)?.size);
 	}
 
 	/**
@@ -54,21 +57,31 @@ export class EventEmitter implements IEvents {
 	 * Инициировать событие с данными
 	 */
 	emit<T extends object>(eventName: string, data?: T) {
+		console.log('EventEmitter.emit:', eventName, data);
+		let handlerCount = 0;
+		
 		this._events.forEach((subscribers, name) => {
-			if (name === '*')
-				subscribers.forEach((callback) =>
+			if (name === '*') {
+				subscribers.forEach((callback) => {
+					handlerCount++;
 					callback({
 						eventName,
 						data,
-					})
-				);
+					});
+				});
+			}
 			if (
 				(name instanceof RegExp && name.test(eventName)) ||
 				name === eventName
 			) {
-				subscribers.forEach((callback) => callback(data));
+				subscribers.forEach((callback) => {
+					handlerCount++;
+					callback(data);
+				});
 			}
 		});
+		
+		console.log('EventEmitter.emit - handlers called:', handlerCount);
 	}
 
 	/**

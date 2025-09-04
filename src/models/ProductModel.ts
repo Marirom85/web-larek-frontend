@@ -35,49 +35,4 @@ export class ProductModel implements IProductModelManager {
 		this.events.emit(EVENTS.PRODUCTS_LOADED, { products: this.products });
 	}
 
-	/**
-	 * Добавить товар в корзину
-	 */
-	addToBasket(productId: string): void {
-		const product = this.getProduct(productId);
-		if (product && !product.inBasket) {
-			product.inBasket = true;
-			this.events.emit(EVENTS.PRODUCT_ADD, { product });
-		}
-	}
-
-	/**
-	 * Удалить товар из корзины
-	 */
-	removeFromBasket(productId: string): void {
-		const product = this.getProduct(productId);
-		if (product && product.inBasket) {
-			product.inBasket = false;
-			this.events.emit(EVENTS.PRODUCT_REMOVE, { productId });
-		}
-	}
-
-	/**
-	 * Проверить, находится ли товар в корзине
-	 */
-	isInBasket(productId: string): boolean {
-		const product = this.getProduct(productId);
-		return product ? product.inBasket : false;
-	}
-
-	/**
-	 * Получить товары в корзине
-	 */
-	getBasketProducts(): IProductModel[] {
-		return this.products.filter((product) => product.inBasket);
-	}
-
-	/**
-	 * Очистить корзину
-	 */
-	clearBasket(): void {
-		this.products.forEach((product) => {
-			product.inBasket = false;
-		});
-	}
 }

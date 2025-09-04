@@ -5,16 +5,43 @@
   @include mixins.button($primary, white, $hover);
   border: 0;
 
+  // Стили для кнопок выбора способа оплаты
+  &_payment {
+    @include mixins.button(white, $primaryLight, $primaryLight);
+    border: $defaultBorder;
+    
+    &_selected {
+      border: $hoverBorder;
+    }
+    
+    &:hover {
+      border: $hoverBorder;
+      color: white;
+    }
+  }
+
   &_alt {
     @include mixins.button(white, $primaryLight, $primaryLight);
     border: $defaultBorder;
     &:hover {
       border: $hoverBorder;
+      color: white;
     }
   }
 
   &_alt-active {
     @include mixins.button(white, $primaryLight, $primaryLight);
     border: $hoverBorder;
+  }
+
+  &_disabled {
+    @include mixins.button($disabled, white, $disabled);
+    cursor: not-allowed;
+    opacity: 0.6;
+    
+    &:hover {
+      background-color: $disabled;
+      transform: none;
+    }
   }
 }

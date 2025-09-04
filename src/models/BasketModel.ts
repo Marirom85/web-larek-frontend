@@ -104,6 +104,6 @@ export class BasketModel implements IBasketModelManager {
 	 * Эмитировать событие изменения корзины
 	 */
 	private emitChangeEvent(): void {
-		this.events.emit(EVENTS.BASKET_CHANGE, { basket: this.basket });
+		this.events.emit(EVENTS.BASKET_UPDATE, { basket: this.basket });
 	}
 }

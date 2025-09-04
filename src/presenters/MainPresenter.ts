@@ -1,5 +1,6 @@
 import { IMainPresenter, IProductModel } from '../types';
 import { EventEmitter } from '../components/base/events';
+import { Api } from '../components/base/api';
 import { ProductModel } from '../models/ProductModel';
 import { BasketModel } from '../models/BasketModel';
 import { OrderModel } from '../models/OrderModel';
@@ -9,9 +10,9 @@ import { MainView } from '../views/MainView';
 import { Modal } from '../components/base/Modal';
 import { ProductPreview } from '../components/base/ProductPreview';
 import { Basket } from '../components/base/Basket';
-import { OrderForm } from '../components/base/OrderForm';
+import { NewOrderForm } from '../components/base/NewOrderForm';
 import { Success } from '../components/base/Success';
-import { EVENTS, MESSAGES, MODAL_TYPES } from '../utils/constants';
+import { API_URL, EVENTS, MESSAGES, MODAL_TYPES } from '../utils/constants';
 
 export class MainPresenter implements IMainPresenter {
 	private events: EventEmitter;
@@ -23,33 +24,43 @@ export class MainPresenter implements IMainPresenter {
 	private view: MainView;
 	private modal: Modal;
 	private currentModal: string | null = null;
+	private orderForm: NewOrderForm;
+	private basket: Basket;
+	private currentStep: 1 | 2 = 1;
 
-	constructor(
-		events: EventEmitter,
-		productModel: ProductModel,
-		basketModel: BasketModel,
-		orderModel: OrderModel,
-		productApi: ProductApi,
-		orderApi: OrderApi
-	) {
-		this.events = events;
-		this.productModel = productModel;
-		this.basketModel = basketModel;
-		this.orderModel = orderModel;
-		this.productApi = productApi;
-		this.orderApi = orderApi;
-		this.view = new MainView(events);
+	constructor() {
+		console.log('MainPresenter constructor - start');
+		this.events = new EventEmitter();
+		const api = new Api(API_URL);
+		
+		// Инициализация API
+		this.productApi = new ProductApi(api);
+		this.orderApi = new OrderApi(api);
+
+		// Инициализация моделей
+		this.productModel = new ProductModel(this.events);
+		this.basketModel = new BasketModel(this.events);
+		this.orderModel = new OrderModel(this.events);
+
+		// Инициализация представлений и компонентов
+		this.view = new MainView(this.events);
 		this.modal = new Modal(
 			document.getElementById('modal-container') as HTMLElement
 		);
+		this.orderForm = new NewOrderForm(this.events);
+		this.basket = new Basket(this.events);
 
+		console.log('MainPresenter constructor - calling bindEvents');
 		this.bindEvents();
+		console.log('MainPresenter constructor - end');
 	}
 
 	/**
 	 * Привязать события
 	 */
 	private bindEvents(): void {
+		console.log('MainPresenter bindEvents - ORDER_UPDATE constant:', EVENTS.ORDER_UPDATE);
+		
 		// События товаров
 		this.events.on(
 			EVENTS.PRODUCTS_LOADED,
@@ -64,7 +75,6 @@ export class MainPresenter implements IMainPresenter {
 
 		// События заказа
 		this.events.on(EVENTS.ORDER_START, this.handleOrderStart.bind(this));
-		this.events.on(EVENTS.ORDER_SUBMIT, this.handleOrderSubmit.bind(this));
 
 		// События модальных окон
 		this.events.on(EVENTS.MODAL_OPEN, this.handleModalOpen.bind(this));
@@ -72,6 +82,13 @@ export class MainPresenter implements IMainPresenter {
 
 		// События ошибок
 		this.events.on(EVENTS.ERROR_SHOW, this.handleErrorShow.bind(this));
+
+		// События обновления заказа
+		this.events.on(EVENTS.ORDER_UPDATE, this.handleOrderUpdateStep.bind(this));
+		console.log('Subscribed to ORDER_UPDATE event');
+
+		// События превью товара
+		this.events.on('productPreview:buttonClick', this.handleProductPreviewButtonClick.bind(this));
 	}
 
 	/**
@@ -115,10 +132,10 @@ export class MainPresenter implements IMainPresenter {
 	 * Открыть модальное окно корзины
 	 */
 	openBasketModal(): void {
-		const basket = new Basket(this.events);
-		basket.updateBasket(this.basketModel.getItems());
+		this.basket.updateBasket(this.basketModel.getItems());
+		this.basket.updateTotal(this.basketModel.getTotal());
 
-		this.modal.setContent(basket.render());
+		this.modal.setContent(this.basket.render());
 		this.modal.open();
 		this.currentModal = 'basket';
 	}
@@ -127,12 +144,13 @@ export class MainPresenter implements IMainPresenter {
 	 * Добавить товар в корзину
 	 */
 	addToBasket(productId: string): void {
-		this.productModel.addToBasket(productId);
 		const product = this.productModel.getProduct(productId);
-		if (product) {
+		if (product && !product.inBasket) {
+			product.inBasket = true;
 			this.basketModel.addItem(product);
 			this.view.updateBasketCount(this.basketModel.getCount());
 			this.updateBasketModalIfOpen();
+			this.events.emit(EVENTS.PRODUCT_ADD, { product });
 		}
 	}
 
@@ -140,20 +158,39 @@ export class MainPresenter implements IMainPresenter {
 	 * Удалить товар из корзины
 	 */
 	removeFromBasket(productId: string): void {
-		this.productModel.removeFromBasket(productId);
-		this.basketModel.removeItem(productId);
-		this.view.updateBasketCount(this.basketModel.getCount());
-		this.updateBasketModalIfOpen();
+		const product = this.productModel.getProduct(productId);
+		if (product && product.inBasket) {
+			product.inBasket = false;
+			this.basketModel.removeItem(productId);
+			this.view.updateBasketCount(this.basketModel.getCount());
+			this.updateBasketModalIfOpen();
+			this.events.emit(EVENTS.PRODUCT_REMOVE, { productId });
+		}
 	}
 
 	/**
 	 * Начать оформление заказа
 	 */
 	startOrder(): void {
-		const orderForm = new OrderForm(this.events);
-		this.modal.setContent(orderForm.render());
+		// Сбрасываем шаг на первый при каждом новом оформлении заказа
+		this.currentStep = 1;
+		this.orderForm.setStep(1);
+		this.orderModel.reset();
+		
+		// Отписываемся от предыдущих событий формы (если были)
+		this.events.off('order:payment:change', this.handlePaymentChange.bind(this));
+		this.events.off('formErrors:change', this.handleFormErrors.bind(this));
+		this.events.off('order:submit', this.handleOrderSubmit.bind(this));
+		
+		this.modal.setContent(this.orderForm.render());
 		this.modal.open();
 		this.currentModal = 'order';
+
+		// Подписываемся на события формы
+		// Обработчик order:update уже подписан через EVENTS.ORDER_UPDATE в bindEvents()
+		this.events.on('order:payment:change', this.handlePaymentChange.bind(this));
+		this.events.on('formErrors:change', this.handleFormErrors.bind(this));
+		this.events.on('order:submit', this.handleOrderSubmit.bind(this));
 	}
 
 	/**
@@ -177,7 +214,10 @@ export class MainPresenter implements IMainPresenter {
 
 			// Очищаем корзину и сбрасываем счётчик
 			this.basketModel.clear();
-			this.productModel.clearBasket();
+			// Очищаем флаги корзины у всех товаров
+			this.productModel.getProducts().forEach(product => {
+				product.inBasket = false;
+			});
 			this.view.updateBasketCount(0);
 			this.orderModel.reset();
 
@@ -227,16 +267,6 @@ export class MainPresenter implements IMainPresenter {
 		this.startOrder();
 	}
 
-	private handleOrderSubmit(data: { data: any }): void {
-		if (data.data) {
-			this.orderModel.setPayment(data.data.payment);
-			this.orderModel.setAddress(data.data.address);
-			this.orderModel.setEmail(data.data.email);
-			this.orderModel.setPhone(data.data.phone);
-			this.submitOrder();
-		}
-	}
-
 	private handleModalOpen(data: { type: string; data: any }): void {
 		if (data.type === 'product' || data.type === MODAL_TYPES.PRODUCT) {
 			this.openProductModal(data.data.productId);
@@ -255,13 +285,154 @@ export class MainPresenter implements IMainPresenter {
 	}
 
 	/**
+	 * Обработчик обновления шага заказа
+	 */
+	private handleOrderUpdateStep(data: { key: string; value: string }): void {
+		console.log('handleOrderUpdateStep called with:', data);
+		// Всегда обновляем данные в модели и валидность формы
+		if (this.currentModal === 'order') {
+			console.log('Order update:', data.key, data.value);
+			this.orderModel.setData(data.key, data.value);
+			const isValid = this.currentStep === 1 
+				? this.orderModel.validateStep1()
+				: this.orderModel.validateStep2();
+			console.log('Validation result:', isValid);
+			this.orderForm.valid = isValid;
+		} else {
+			console.log('Not in order modal, current modal:', this.currentModal);
+		}
+	}
+
+	/**
+	 * Обработчик обновления данных заказа
+	 */
+	private handleOrderUpdate(data: { key: string; value: string }): void {
+		this.orderModel.setData(data.key, data.value);
+	}
+
+	/**
+	 * Обработчик изменения способа оплаты
+	 */
+	private handlePaymentChange(data: { key: string; value: string }): void {
+		console.log('Payment change:', data.key, data.value);
+		this.orderModel.setData(data.key, data.value);
+		// Обновляем валидность формы после изменения способа оплаты
+		if (this.currentModal === 'order') {
+			const isValid = this.currentStep === 1 
+				? this.orderModel.validateStep1()
+				: this.orderModel.validateStep2();
+			console.log('Payment validation result:', isValid);
+			this.orderForm.valid = isValid;
+		}
+	}
+
+	/**
+	 * Обработчик изменения ошибок формы
+	 */
+	private handleFormErrors(errors: Record<string, string>): void {
+		const { payment, address, email, phone } = errors;
+		
+		// Обновляем представление формы с отображением соответствующих ошибок
+		console.log('Form errors:', errors);
+		
+		// Передаем ошибки в форму для отображения
+		if (this.currentModal === 'order') {
+			// Фильтруем ошибки по текущему шагу
+			let filteredErrors: Record<string, string> = {};
+			
+			if (this.currentStep === 1) {
+				// На первом шаге показываем только ошибки оплаты и адреса
+				if (errors.payment) filteredErrors.payment = errors.payment;
+				if (errors.address) filteredErrors.address = errors.address;
+			} else {
+				// На втором шаге показываем только ошибки email и телефона
+				if (errors.email) filteredErrors.email = errors.email;
+				if (errors.phone) filteredErrors.phone = errors.phone;
+			}
+			
+			// Формируем строку с ошибками для отображения
+			const errorMessages = Object.values(filteredErrors).filter(msg => msg).join('\n');
+			this.orderForm.errors = errorMessages;
+			
+			// Обновляем валидность формы при изменении ошибок
+			const isValid = this.currentStep === 1 
+				? this.orderModel.validateStep1()
+				: this.orderModel.validateStep2();
+			this.orderForm.valid = isValid;
+		}
+	}
+
+	/**
+	 * Обработчик отправки формы заказа
+	 */
+	private handleOrderSubmit(data: { step: number }): void {
+		// Проверяем валидность текущего шага перед переходом
+		if (this.currentModal === 'order') {
+			const isValid = this.currentStep === 1 
+				? this.orderModel.validateStep1()
+				: this.orderModel.validateStep2();
+			
+			if (isValid) {
+				if (this.currentStep === 1) {
+					this.setStep(2);
+				} else {
+					const orderData = this.orderModel.getData();
+					this.submitOrder();
+				}
+			} else {
+				// Если форма невалидна, обновляем состояние кнопки
+				this.orderForm.valid = false;
+			}
+		}
+	}
+
+	/**
+	 * Установить шаг формы заказа
+	 */
+	private setStep(step: 1 | 2): void {
+		this.currentStep = step;
+		this.orderForm.setStep(step);
+		
+		// Обновляем валидность формы для нового шага
+		const isValid = step === 1 
+			? this.orderModel.validateStep1()
+			: this.orderModel.validateStep2();
+		this.orderForm.valid = isValid;
+	}
+
+	/**
+	 * Обработчик клика по кнопке в превью товара
+	 */
+	private handleProductPreviewButtonClick(data: { productId: string; inBasket: boolean }): void {
+		if (data.inBasket) {
+			// Удаляем из корзины
+			this.removeFromBasket(data.productId);
+			// Закрываем модалку после удаления
+			this.events.emit(EVENTS.MODAL_CLOSE);
+		} else {
+			const product = this.productModel.getProduct(data.productId);
+			if (product) {
+				// Проверяем, есть ли цена у товара
+				if (!product.price || product.price <= 0) {
+					// Не добавляем товары без цены в корзину
+					return;
+				}
+				// Добавляем в корзину
+				this.addToBasket(data.productId);
+				// Закрываем модалку после покупки
+				this.events.emit(EVENTS.MODAL_CLOSE);
+			}
+		}
+	}
+
+	/**
 	 * Обновить модальное окно корзины, если оно открыто
 	 */
 	private updateBasketModalIfOpen(): void {
 		if (this.currentModal === 'basket') {
-			const basket = new Basket(this.events);
-			basket.updateBasket(this.basketModel.getItems());
-			this.modal.setContent(basket.render());
+			this.basket.updateBasket(this.basketModel.getItems());
+			this.basket.updateTotal(this.basketModel.getTotal());
+			this.modal.setContent(this.basket.render());
 		}
 	}
 }

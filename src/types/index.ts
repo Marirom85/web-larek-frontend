@@ -255,9 +255,6 @@ export interface IProductModelManager {
 	getProducts(): IProductModel[];
 	getProduct(id: string): IProductModel | null;
 	setProducts(products: IProduct[]): void;
-	addToBasket(productId: string): void;
-	removeFromBasket(productId: string): void;
-	isInBasket(productId: string): boolean;
 }
 
 /**
