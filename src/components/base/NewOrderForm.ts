@@ -12,6 +12,7 @@ export class NewOrderForm {
     protected orderStep: OrderStepView;
     protected contactsStep: ContactsStepView;
     protected submitButton: HTMLButtonElement | null = null;
+    protected currentValues: Record<string, string> = {};
 
     constructor(events: EventEmitter) {
         this.events = events;
@@ -31,24 +32,46 @@ export class NewOrderForm {
         return container;
     }
 
-    /**
-     * Рендерит текущий шаг формы
-     */
-    protected renderForm(): void {
-        this.element.innerHTML = '';
+	/**
+	 * Рендерит текущий шаг формы
+	 */
+	protected renderForm(): void {
+		this.element.innerHTML = '';
+		console.log('NewOrderForm renderForm - step:', this.currentStep);
 
-        if (this.currentStep === 1) {
-            this.element.appendChild(this.orderStep.render());
-        } else {
-            this.element.appendChild(this.contactsStep.render());
-        }
+		if (this.currentStep === 1) {
+			this.element.appendChild(this.orderStep.render());
+			// Вызываем bindEvents после добавления формы в DOM
+			console.log('Calling orderStep.bindEvents()');
+			this.orderStep.bindEvents();
+		} else {
+			this.element.appendChild(this.contactsStep.render());
+			// Вызываем bindEvents после добавления формы в DOM
+			console.log('Calling contactsStep.bindEvents()');
+			this.contactsStep.bindEvents();
+		}
 
-        // Находим кнопку отправки
-        this.submitButton = this.element.querySelector('button[type="submit"]');
-        if (this.submitButton) {
-            this.submitButton.textContent = this.currentStep === 1 ? 'Далее' : 'Оплатить';
-        }
-    }
+		// Восстанавливаем значения полей и состояние кнопок после перерисовки
+		if (Object.keys(this.currentValues).length > 0) {
+			console.log('Restoring form values after render:', this.currentValues);
+			this.setValues(this.currentValues);
+		}
+
+		// Находим кнопку отправки
+		this.submitButton = this.element.querySelector('button[type="submit"]');
+		if (this.submitButton) {
+			this.submitButton.textContent = this.currentStep === 1 ? 'Далее' : 'Оплатить';
+		}
+
+		// Логируем состояние кнопок оплаты после рендеринга
+		if (this.currentStep === 1) {
+			const paymentButtons = this.element.querySelectorAll<HTMLButtonElement>('button[name]');
+			console.log('Payment buttons after render:', paymentButtons.length);
+			paymentButtons.forEach(button => {
+				console.log(`Button ${button.name} classes:`, button.className);
+			});
+		}
+	}
 
     /**
      * Навешивает обработчики событий для управления шагами
@@ -57,10 +80,34 @@ export class NewOrderForm {
         // Обработчик отправки формы
         const form = this.element.querySelector('form');
         if (form) {
-            form.addEventListener('submit', (event) => {
-                event.preventDefault();
-                this.handleSubmit();
-            });
+            // Удаляем старые обработчики перед добавлением новых
+            form.removeEventListener('submit', this.handleFormSubmit.bind(this));
+            form.addEventListener('submit', this.handleFormSubmit.bind(this));
+        }
+
+        // Обработчик нажатия Enter в полях ввода
+        const inputs = this.element.querySelectorAll('input');
+        inputs.forEach(input => {
+            // Удаляем старые обработчики перед добавлением новых
+            input.removeEventListener('keydown', this.handleInputKeydown.bind(this));
+            input.addEventListener('keydown', this.handleInputKeydown.bind(this));
+        });
+    }
+
+    /**
+     * Обработчик отправки формы
+     */
+    private handleFormSubmit(event: Event): void {
+        event.preventDefault();
+        this.handleSubmit();
+    }
+
+    /**
+     * Обработчик нажатия клавиш в полях ввода
+     */
+    private handleInputKeydown(event: KeyboardEvent): void {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Предотвращаем отправку формы по Enter
         }
     }
 
@@ -68,11 +115,9 @@ export class NewOrderForm {
      * Обработчик отправки формы
      */
     protected handleSubmit(): void {
-        if (this.currentStep === 1) {
-            this.setStep(2);
-        } else {
-            this.events.emit('order:submit');
-        }
+        // Эмитируем событие для валидации текущего шага
+        // Основная логика обработки теперь в MainPresenter
+        this.events.emit('order:submit', { step: this.currentStep });
     }
 
     /**
@@ -81,6 +126,7 @@ export class NewOrderForm {
     setStep(step: 1 | 2): void {
         this.currentStep = step;
         this.renderForm();
+        this.bindFormEvents(); // Перепривязываем события после рендеринга
     }
 
     /**
@@ -109,8 +155,11 @@ export class NewOrderForm {
      * Заполняет значения формы
      */
     setValues(values: Record<string, string>): void {
-        this.orderStep.setValues(values);
-        this.contactsStep.setValues(values);
+        // Сохраняем текущие значения
+        this.currentValues = { ...this.currentValues, ...values };
+        
+        this.orderStep.setValues(this.currentValues);
+        this.contactsStep.setValues(this.currentValues);
     }
 
     /**

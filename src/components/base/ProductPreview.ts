@@ -66,12 +66,26 @@ export class ProductPreview {
 	 */
 	protected updateButton(): void {
 		if (this.button && this.product) {
-			if (this.product.inBasket) {
-				this.button.textContent = 'Убрать';
-				this.button.classList.add('button_alt');
-			} else {
-				this.button.textContent = 'Купить';
+			// Проверяем, есть ли цена у товара
+			const hasPrice = this.product.price && this.product.price > 0;
+			
+			if (!hasPrice) {
+				// Товар без цены - блокируем кнопку
+				this.button.textContent = 'Недоступно';
+				this.button.disabled = true;
+				this.button.classList.add('button_disabled');
 				this.button.classList.remove('button_alt');
+			} else if (this.product.inBasket) {
+				// Товар в корзине
+				this.button.textContent = 'Убрать';
+				this.button.disabled = false;
+				this.button.classList.add('button_alt');
+				this.button.classList.remove('button_disabled');
+			} else {
+				// Товар доступен для покупки
+				this.button.textContent = 'Купить';
+				this.button.disabled = false;
+				this.button.classList.remove('button_alt', 'button_disabled');
 			}
 		}
 	}

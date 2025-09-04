@@ -23,25 +23,43 @@ export class OrderModel implements IOrderModelManager {
         return { ...this.order };
     }
 
+	/**
+	 * Установить данные заказа
+	 */
+	setData(key: string, value: string): void {
+		console.log('OrderModel.setData:', key, value);
+		switch (key) {
+			case 'payment':
+				this.order.payment = value as PaymentMethod;
+				console.log('Payment set to:', this.order.payment);
+				break;
+			case 'address':
+				this.order.address = value;
+				console.log('Address set to:', this.order.address);
+				break;
+			case 'email':
+				this.order.email = value;
+				console.log('Email set to:', this.order.email);
+				break;
+			case 'phone':
+				this.order.phone = value;
+				console.log('Phone set to:', this.order.phone);
+				break;
+			default:
+				console.log('Unknown key:', key);
+				break;
+		}
+		this.validate();
+	}
+
     /**
-     * Установить данные заказа
+     * Обработчик события изменения способа оплаты
      */
-    setData(key: string, value: string): void {
-        switch (key) {
-            case 'payment':
-                this.order.payment = value as PaymentMethod;
-                break;
-            case 'address':
-                this.order.address = value;
-                break;
-            case 'email':
-                this.order.email = value;
-                break;
-            case 'phone':
-                this.order.phone = value;
-                break;
+    handlePaymentChange(data: { key: string; value: string }): void {
+        if (data.key === 'payment') {
+            this.order.payment = data.value as PaymentMethod;
+            this.validate();
         }
-        this.validate();
     }
 
     /**
@@ -95,15 +113,23 @@ export class OrderModel implements IOrderModelManager {
         return this.order.isValid;
     }
 
-    /**
-     * Валидация первого шага (оплата и адрес)
-     */
-    validateStep1(): boolean {
-        const isPaymentValid = this.order.payment !== null;
-        const isAddressValid = validateAddress(this.order.address);
+	/**
+	 * Валидация первого шага (оплата и адрес)
+	 */
+	validateStep1(): boolean {
+		const isPaymentValid = this.order.payment !== null;
+		const isAddressValid = validateAddress(this.order.address);
+		
+		console.log('Step1 validation:', {
+			payment: this.order.payment,
+			address: this.order.address,
+			paymentValid: isPaymentValid,
+			addressValid: isAddressValid,
+			addressLength: this.order.address.length
+		});
 
-        return isPaymentValid && isAddressValid;
-    }
+		return isPaymentValid && isAddressValid;
+	}
 
     /**
      * Валидация второго шага (email и телефон)

@@ -88,6 +88,15 @@ export class Basket {
 			});
 		}
 
+		// Добавляем скролл если много товаров
+		if (this.items.length >= 4) {
+			this.list.style.maxHeight = '414px';
+			this.list.style.overflowY = 'auto';
+		} else {
+			this.list.style.maxHeight = '';
+			this.list.style.overflowY = '';
+		}
+
 		// Обновляем состояние кнопки
 		if (this.button) {
 			this.button.disabled = this.items.length === 0;
